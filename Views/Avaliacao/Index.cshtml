@@ -84,15 +84,15 @@
                     <div class="presentation-body">
                         <div class="meta-grid">
                             <div>
-                                <span class="summary-label">Data</span>
+                                <span class="summary-label">Data: </span>
                                 <strong>@apresentacao.Data.ToString("dd/MM/yyyy")</strong>
                             </div>
                             <div>
-                                <span class="summary-label">Turno</span>
+                                <span class="summary-label">Turno: </span>
                                 <strong>@CultureInfo.CurrentCulture.TextInfo.ToTitleCase(apresentacao.Turno.ToLowerInvariant())</strong>
                             </div>
                             <div>
-                                <span class="summary-label">Média final</span>
+                                <span class="summary-label">Média final: </span>
                                 <strong>@(apresentacao.MediaFinal?.ToString("0.00", new CultureInfo("pt-BR")) ?? "Ainda sem média")</strong>
                             </div>
                         </div>
@@ -111,7 +111,7 @@
                                    accept="audio/webm,audio/wav,audio/mp3,audio/m4a"
                                    data-audio-file-input />
 
-                            <div class="audio-recorder" data-recorder>
+                            <div class="audio-recorder" data-recorder data-recording-state="idle">
                                 <div class="recorder-topbar">
                                     <div>
                                         <span class="summary-label">Áudio do parecer - </span>
@@ -120,11 +120,50 @@
                                     <span class="recorder-timer" data-record-timer>00:00</span>
                                 </div>
 
-                                <div class="recorder-actions">
-                                    <button type="button" class="btn btn-dark recorder-button" data-record-start>Gravar áudio</button>
-                                    <button type="button" class="btn btn-outline-dark recorder-button" data-record-stop disabled>Encerrar</button>
+                                <div class="recorder-stage">
+                                    <div class="recorder-display">
+                                        <p class="transcription-status" data-transcription-status>Pressione play para iniciar a gravação.</p>
+                                    </div>
+
+                                    <div class="voice-visualizer" data-voice-visualizer aria-hidden="true">
+                                        <span class="visualizer-bar" data-visualizer-bar></span>
+                                        <span class="visualizer-bar" data-visualizer-bar></span>
+                                        <span class="visualizer-bar" data-visualizer-bar></span>
+                                        <span class="visualizer-bar" data-visualizer-bar></span>
+                                        <span class="visualizer-bar" data-visualizer-bar></span>
+                                        <span class="visualizer-bar" data-visualizer-bar></span>
+                                        <span class="visualizer-bar" data-visualizer-bar></span>
+                                        <span class="visualizer-bar" data-visualizer-bar></span>
+                                        <span class="visualizer-bar" data-visualizer-bar></span>
+                                        <span class="visualizer-bar" data-visualizer-bar></span>
+                                        <span class="visualizer-bar" data-visualizer-bar></span>
+                                        <span class="visualizer-bar" data-visualizer-bar></span>
+                                        <span class="visualizer-bar" data-visualizer-bar></span>
+                                        <span class="visualizer-bar" data-visualizer-bar></span>
+                                        <span class="visualizer-bar" data-visualizer-bar></span>
+                                        <span class="visualizer-bar" data-visualizer-bar></span>
+                                    </div>
                                 </div>
-                                <p class="transcription-status" data-transcription-status>Pronto para gravar.</p>
+
+                                <div class="recorder-actions">
+                                    <button type="button" class="media-control media-control-play" data-record-play aria-label="Iniciar ou continuar gravacao" title="Iniciar ou continuar gravacao">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M8 6.5v11l9-5.5-9-5.5Z"></path>
+                                        </svg>
+                                    </button>
+                                    <button type="button" class="media-control media-control-pause" data-record-pause aria-label="Pausar gravacao" title="Pausar gravacao" disabled>
+                                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M7 5h4v14H7zM13 5h4v14h-4z"></path>
+                                        </svg>
+                                    </button>
+                                    <button type="button" class="media-control media-control-stop" data-record-stop aria-label="Encerrar gravacao" title="Encerrar gravacao" disabled>
+                                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M7 7h10v10H7z"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <p class="recorder-helper">* Clique em play para iniciar. Caso queira somente pausar, pode apertar em play para retormar de onde parou. 
+                                    Se optar pelo 'stop', ao retormar a gravação iniciará um novo áudio.</p>
                                 <audio controls class="audio-preview d-none" data-record-preview></audio>
                             </div>
 
