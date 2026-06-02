@@ -15,10 +15,17 @@
     const badgeElement = container.querySelector("[data-record-badge]");
     const statusElement = container.querySelector("[data-transcription-status]");
     const previewElement = container.querySelector("[data-record-preview]");
-    const visualizerBars = Array.from(container.querySelectorAll("[data-visualizer-bar]"));
+    const visualizerElement = container.querySelector("[data-voice-visualizer]");
+    const waveformCanvas = container.querySelector("[data-voice-waveform]");
+    const saveOverlay = form?.querySelector("[data-save-overlay]");
     const saveButton = form?.querySelector("[data-save-button]");
 
-    if (!form || !fileInput || !playButton || !pauseButton || !stopButton || !timerElement || !badgeElement || !statusElement || !previewElement || !saveButton) {
+    if (!form || !fileInput || !playButton || !pauseButton || !stopButton || !timerElement || !badgeElement || !statusElement || !previewElement || !visualizerElement || !waveformCanvas || !saveOverlay || !saveButton) {
+      return;
+    }
+
+    const waveformContext = waveformCanvas.getContext("2d");
+    if (!waveformContext) {
       return;
     }
 
@@ -42,6 +49,8 @@
     let analyserData = null;
     let sourceNode = null;
     let visualizerFrameId = null;
+    let lastWaveformPoints = [];
+    const saveButtonLabel = saveButton.textContent;
 
     const formatElapsed = (elapsedMs) => {
       const totalSeconds = Math.floor(elapsedMs / 1000);
@@ -62,10 +71,173 @@
       timerElement.textContent = formatElapsed(getElapsedMs());
     };
 
+    const syncCanvasSize = () => {
+      const rect = visualizerElement.getBoundingClientRect();
+      const width = Math.max(1, Math.round(rect.width));
+      const height = Math.max(1, Math.round(rect.height));
+      const dpr = window.devicePixelRatio || 1;
+      const nextWidth = Math.round(width * dpr);
+      const nextHeight = Math.round(height * dpr);
+
+      if (waveformCanvas.width !== nextWidth || waveformCanvas.height !== nextHeight) {
+        waveformCanvas.width = nextWidth;
+        waveformCanvas.height = nextHeight;
+      }
+
+      waveformContext.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { width, height };
+    };
+
+    const getWaveColors = (state) => {
+      switch (state) {
+        case "recording":
+          return {
+            line: "#86f7b7",
+            glow: "rgba(134, 247, 183, 0.22)",
+            fill: "rgba(134, 247, 183, 0.08)"
+          };
+        case "paused":
+          return {
+            line: "#f6cb73",
+            glow: "rgba(246, 203, 115, 0.18)",
+            fill: "rgba(246, 203, 115, 0.08)"
+          };
+        case "ready":
+          return {
+            line: "#8fb1ff",
+            glow: "rgba(143, 177, 255, 0.18)",
+            fill: "rgba(143, 177, 255, 0.08)"
+          };
+        default:
+          return {
+            line: "rgba(236, 242, 248, 0.66)",
+            glow: "rgba(255, 255, 255, 0.06)",
+            fill: "rgba(255, 255, 255, 0.04)"
+          };
+      }
+    };
+
+    const drawWaveform = (points, state) => {
+      const { width, height } = syncCanvasSize();
+      const colors = getWaveColors(state);
+      const centerY = height / 2;
+      const leftPadding = 6;
+      const drawableWidth = Math.max(1, width - (leftPadding * 2));
+
+      waveformContext.clearRect(0, 0, width, height);
+      waveformContext.lineCap = "round";
+      waveformContext.lineJoin = "round";
+
+      waveformContext.beginPath();
+      waveformContext.strokeStyle = "rgba(208, 221, 234, 0.18)";
+      waveformContext.lineWidth = 1;
+      waveformContext.moveTo(leftPadding, centerY);
+      waveformContext.lineTo(width - leftPadding, centerY);
+      waveformContext.stroke();
+
+      if (!points.length) {
+        return;
+      }
+
+      waveformContext.strokeStyle = colors.line;
+      waveformContext.lineWidth = 2;
+      waveformContext.shadowBlur = 12;
+      waveformContext.shadowColor = colors.glow;
+      waveformContext.fillStyle = colors.fill;
+
+      const bars = Math.min(points.length, 64);
+      const step = drawableWidth / Math.max(bars - 1, 1);
+
+      for (let index = 0; index < bars; index += 1) {
+        const point = Math.abs(points[index] ?? 0);
+        const amplitude = Math.max(3, point * height * 0.34);
+        const x = leftPadding + (index * step);
+
+        waveformContext.beginPath();
+        waveformContext.moveTo(x, centerY - amplitude);
+        waveformContext.lineTo(x, centerY + amplitude);
+        waveformContext.stroke();
+      }
+
+      waveformContext.shadowBlur = 0;
+    };
+
+    const buildIdleWaveform = (state) => {
+      const amplitude = state === "paused" ? 0.08 : state === "ready" ? 0.1 : 0.04;
+      const points = [];
+
+      for (let index = 0; index < 64; index += 1) {
+        const progress = index / 63;
+        const envelope = Math.sin(progress * Math.PI);
+        const wave = Math.sin(progress * Math.PI * 5) * amplitude * envelope;
+        const ripple = Math.sin(progress * Math.PI * 15) * (amplitude * 0.2) * envelope;
+        points.push(wave + ripple);
+      }
+
+      return points;
+    };
+
+    const sampleWaveform = () => {
+      if (!analyser || !analyserData) {
+        return [];
+      }
+
+      analyser.getByteTimeDomainData(analyserData);
+      const points = [];
+      const totalPoints = 64;
+      const stride = Math.max(1, Math.floor(analyserData.length / totalPoints));
+
+      for (let index = 0; index < totalPoints; index += 1) {
+        const sampleIndex = Math.min(analyserData.length - 1, index * stride);
+        const normalized = (analyserData[sampleIndex] - 128) / 128;
+        points.push(normalized * 0.95);
+      }
+
+      return points;
+    };
+
+    const renderCurrentWaveform = () => {
+      const state = container.dataset.recordingState || "idle";
+
+      if (state === "recording" && analyser) {
+        lastWaveformPoints = sampleWaveform();
+        drawWaveform(lastWaveformPoints, "recording");
+        return;
+      }
+
+      if ((state === "paused" || state === "ready") && lastWaveformPoints.length > 0) {
+        drawWaveform(lastWaveformPoints, state);
+        return;
+      }
+
+      drawWaveform(buildIdleWaveform(state), state);
+    };
+
+    const stopVisualizerLoop = () => {
+      if (visualizerFrameId) {
+        window.cancelAnimationFrame(visualizerFrameId);
+        visualizerFrameId = null;
+      }
+    };
+
+    const drawVisualizer = () => {
+      if (!analyser || mediaRecorder?.state !== "recording") {
+        renderCurrentWaveform();
+        return;
+      }
+
+      renderCurrentWaveform();
+      visualizerFrameId = window.requestAnimationFrame(drawVisualizer);
+    };
+
     const setRecorderState = (state, badgeText, statusText) => {
       container.dataset.recordingState = state;
       badgeElement.textContent = badgeText;
       statusElement.textContent = statusText;
+
+      if (state !== "recording") {
+        renderCurrentWaveform();
+      }
     };
 
     const syncButtons = () => {
@@ -79,55 +251,20 @@
       saveButton.disabled = isRecording || isPaused;
     };
 
-    const resetVisualizer = () => {
-      visualizerBars.forEach((bar, index) => {
-        const baseScale = 0.16 + ((index % 4) * 0.025);
-        bar.style.setProperty("--bar-scale", baseScale.toFixed(3));
-      });
-    };
-
-    const stopVisualizerLoop = () => {
-      if (visualizerFrameId) {
-        window.cancelAnimationFrame(visualizerFrameId);
-        visualizerFrameId = null;
-      }
-    };
-
-    const drawVisualizer = () => {
-      if (!analyser || mediaRecorder?.state !== "recording") {
-        resetVisualizer();
-        return;
-      }
-
-      analyser.getByteFrequencyData(analyserData);
-      const average = analyserData.reduce((sum, value) => sum + value, 0) / Math.max(analyserData.length, 1);
-      const averageLevel = average / 255;
-
-      visualizerBars.forEach((bar, index) => {
-        const sample = analyserData[index % analyserData.length] / 255;
-        const wave = (Math.sin((Date.now() / 130) + index) + 1) / 2;
-        const scale = Math.min(1, 0.18 + sample * 0.72 + averageLevel * 0.45 + wave * 0.08);
-        bar.style.setProperty("--bar-scale", scale.toFixed(3));
-      });
-
-      visualizerFrameId = window.requestAnimationFrame(drawVisualizer);
-    };
-
     const setupVisualizer = async () => {
       if (!AudioContextConstructor || !mediaStream) {
-        resetVisualizer();
+        renderCurrentWaveform();
         return;
       }
 
       audioContext = new AudioContextConstructor();
       analyser = audioContext.createAnalyser();
-      analyser.fftSize = 64;
-      analyser.smoothingTimeConstant = 0.8;
-      analyserData = new Uint8Array(analyser.frequencyBinCount);
+      analyser.fftSize = 2048;
+      analyser.smoothingTimeConstant = 0.82;
+      analyserData = new Uint8Array(analyser.fftSize);
       sourceNode = audioContext.createMediaStreamSource(mediaStream);
       sourceNode.connect(analyser);
       await audioContext.resume();
-      drawVisualizer();
     };
 
     const clearPreview = () => {
@@ -138,6 +275,44 @@
 
       previewElement.removeAttribute("src");
       previewElement.classList.add("d-none");
+    };
+
+    const lockFormForSubmit = () => {
+      form.dataset.submitting = "true";
+      form.classList.add("is-submitting");
+      form.setAttribute("aria-busy", "true");
+      saveOverlay.hidden = false;
+      saveButton.textContent = "Salvando...";
+
+      form.querySelectorAll("button, input, select, textarea").forEach((element) => {
+        if (!(element instanceof HTMLElement)) {
+          return;
+        }
+
+        if (!element.hasAttribute("data-was-disabled")) {
+          element.setAttribute("data-was-disabled", element.disabled ? "true" : "false");
+        }
+
+        element.disabled = true;
+      });
+    };
+
+    const unlockFormIfNeeded = () => {
+      form.dataset.submitting = "false";
+      form.classList.remove("is-submitting");
+      form.removeAttribute("aria-busy");
+      saveOverlay.hidden = true;
+      saveButton.textContent = saveButtonLabel;
+
+      form.querySelectorAll("[data-was-disabled]").forEach((element) => {
+        if (!(element instanceof HTMLElement)) {
+          return;
+        }
+
+        const wasDisabled = element.getAttribute("data-was-disabled") === "true";
+        element.disabled = wasDisabled;
+        element.removeAttribute("data-was-disabled");
+      });
     };
 
     const setRecordedFile = (blob) => {
@@ -158,7 +333,6 @@
 
     const cleanupAudioGraph = async () => {
       stopVisualizerLoop();
-      resetVisualizer();
       sourceNode?.disconnect();
       sourceNode = null;
       analyser = null;
@@ -195,7 +369,11 @@
 
     const enterIdleState = () => {
       timerElement.textContent = "00:00";
-      setRecorderState(recordedFile ? "ready" : "idle", recordedFile ? "Audio pronto" : "Pronto", recordedFile ? statusAfterStop : idleStatusText);
+      setRecorderState(
+        recordedFile ? "ready" : "idle",
+        recordedFile ? "Audio pronto" : "Pronto",
+        recordedFile ? statusAfterStop : idleStatusText
+      );
       syncButtons();
     };
 
@@ -241,6 +419,7 @@
       recordingElapsedMs = 0;
       recordingStartedAt = 0;
       statusAfterStop = "Audio pronto para envio.";
+      lastWaveformPoints = buildIdleWaveform("recording");
       updateTimer();
 
       try {
@@ -289,6 +468,7 @@
         startTimerLoop();
         setRecorderState("recording", "Gravando", "Captando sua voz agora. Fale normalmente.");
         syncButtons();
+        drawVisualizer();
       } catch {
         await releaseStream();
         resetRecorderInternals();
@@ -309,9 +489,9 @@
       recordingStartedAt = Date.now();
       mediaRecorder.resume();
       startTimerLoop();
-      drawVisualizer();
       setRecorderState("recording", "Gravando", "Gravacao retomada. Seguimos do ponto em que voce pausou.");
       syncButtons();
+      drawVisualizer();
     };
 
     const pauseRecording = () => {
@@ -323,7 +503,7 @@
       recordingStartedAt = 0;
       mediaRecorder.pause();
       stopVisualizerLoop();
-      resetVisualizer();
+      renderCurrentWaveform();
       updateTimer();
       setRecorderState("paused", "Pausado", "Gravacao pausada. Pressione play para continuar ou stop para encerrar.");
       syncButtons();
@@ -348,7 +528,7 @@
       window.clearInterval(timerIntervalId);
       timerIntervalId = null;
       stopVisualizerLoop();
-      resetVisualizer();
+      renderCurrentWaveform();
       mediaRecorder.stop();
       setRecorderState("ready", "Finalizando", "Encerrando gravacao e preparando o audio...");
       syncButtons();
@@ -374,6 +554,11 @@
     });
 
     form.addEventListener("submit", (event) => {
+      if (form.dataset.submitting === "true") {
+        event.preventDefault();
+        return;
+      }
+
       if (mediaRecorder && mediaRecorder.state !== "inactive") {
         event.preventDefault();
         pendingSubmit = true;
@@ -384,11 +569,23 @@
       if (!recordedFile && !fileInput.files?.length && !hasExistingParecer) {
         event.preventDefault();
         setRecorderState("idle", "Obrigatorio", "Grave o audio do parecer antes de salvar.");
+        unlockFormIfNeeded();
+        return;
       }
+
+      if (typeof form.checkValidity === "function" && !form.checkValidity()) {
+        unlockFormIfNeeded();
+        return;
+      }
+
+      lockFormForSubmit();
     });
 
+    window.addEventListener("resize", renderCurrentWaveform);
+
     clearPreview();
-    resetVisualizer();
+    unlockFormIfNeeded();
     enterIdleState();
+    renderCurrentWaveform();
   }
 })();

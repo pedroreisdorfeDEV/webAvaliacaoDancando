@@ -122,26 +122,12 @@
 
                                 <div class="recorder-stage">
                                     <div class="recorder-display">
+                                        <span class="recording-badge" data-record-badge>Pronto</span>
                                         <p class="transcription-status" data-transcription-status>Pressione play para iniciar a gravação.</p>
                                     </div>
 
                                     <div class="voice-visualizer" data-voice-visualizer aria-hidden="true">
-                                        <span class="visualizer-bar" data-visualizer-bar></span>
-                                        <span class="visualizer-bar" data-visualizer-bar></span>
-                                        <span class="visualizer-bar" data-visualizer-bar></span>
-                                        <span class="visualizer-bar" data-visualizer-bar></span>
-                                        <span class="visualizer-bar" data-visualizer-bar></span>
-                                        <span class="visualizer-bar" data-visualizer-bar></span>
-                                        <span class="visualizer-bar" data-visualizer-bar></span>
-                                        <span class="visualizer-bar" data-visualizer-bar></span>
-                                        <span class="visualizer-bar" data-visualizer-bar></span>
-                                        <span class="visualizer-bar" data-visualizer-bar></span>
-                                        <span class="visualizer-bar" data-visualizer-bar></span>
-                                        <span class="visualizer-bar" data-visualizer-bar></span>
-                                        <span class="visualizer-bar" data-visualizer-bar></span>
-                                        <span class="visualizer-bar" data-visualizer-bar></span>
-                                        <span class="visualizer-bar" data-visualizer-bar></span>
-                                        <span class="visualizer-bar" data-visualizer-bar></span>
+                                        <canvas class="voice-waveform" data-voice-waveform width="640" height="120"></canvas>
                                     </div>
                                 </div>
 
@@ -180,6 +166,14 @@
                             </div>
 
                             <button type="submit" class="btn btn-primary festival-button" data-save-button>Salvar avaliação</button>
+
+                            <div class="save-overlay" data-save-overlay hidden>
+                                <div class="save-overlay-card" role="status" aria-live="assertive">
+                                    <span class="save-spinner" aria-hidden="true"></span>
+                                    <strong>Salvando...</strong>
+                                    <p>Enviando nota e áudio. Aguarde a conclusão.</p>
+                                </div>
+                            </div>
                         </form>
                     </div>
                 </details>
