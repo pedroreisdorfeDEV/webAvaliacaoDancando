@@ -1,0 +1,49 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Login";
+}
+
+<section class="auth-shell">
+    <div class="auth-panel">
+        <div class="auth-brand">
+            <span class="eyebrow">Festival de Dança</span>
+            <h3>Dançando XXXVII edição</h3>
+            <p>Ambiente de avaliação dos jurados.</p>
+        </div>
+
+        <div class="auth-card">
+            <div class="card-heading">
+                <span class="badge-soft">Acesso dos jurados</span>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.FeedbackMensagem))
+            {
+                <div class="alert alert-info soft-alert" role="status">
+                    @Model.FeedbackMensagem
+                </div>
+            }
+
+            <form method="post" asp-action="Login" class="stack-form">
+                <div asp-validation-summary="ModelOnly" class="text-danger validation-summary"></div>
+
+                <div class="field-block">
+                    <label asp-for="Login"></label>
+                    <input asp-for="Login" class="form-control festival-input" autocomplete="username" />
+                    <span asp-validation-for="Login" class="text-danger"></span>
+                </div>
+
+                <div class="field-block">
+                    <label asp-for="Senha"></label>
+                    <input asp-for="Senha" class="form-control festival-input" autocomplete="current-password" />
+                    <span asp-validation-for="Senha" class="text-danger"></span>
+                </div>
+
+                <button type="submit" class="btn btn-primary festival-button w-100">Acessar</button>
+            </form>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#111111" />
+    <title>@ViewData["Title"] - Festival Dançando</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="app-frame">
+        <header class="topbar">
+            <a class="brand-lockup" asp-controller="Home" asp-action="Index">
+                <span class="brand-kicker">Festival de Dança</span>
+                <strong>Dançando XXXVII edição</strong>
+            </a>
+
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                @* <a class="topbar-link" asp-controller="Avaliacao" asp-action="Index">Avaliação</a> *@
+                <div class="hero-meta">
+                    <div class="jurado-chip">
+                        <strong>@Model.JuradoNome</strong>
+                        <form method="post" asp-controller="Auth" asp-action="Logout">
+                            <button type="submit" class="btn btn-outline-light hero-logout">Sair</button>
+                        </form>
+                    </div>
+                   
+                </div>
+            }
+        </header>
+
+        <main class="main-shell">
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

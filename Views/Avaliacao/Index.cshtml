@@ -1,0 +1,154 @@
+@using System.Globalization
+@model AvaliacaoViewModel
+@{
+    ViewData["Title"] = "Avaliação";
+}
+
+<section class="page-shell">
+    <div class="page-hero">
+        <div>
+            <span class="eyebrow">Painel do jurado</span>
+            <h4>Avaliação das coreografias</h4>
+            <p>Escolha a programação do dia, grave o parecer em áudio, dê a nota e salve.</p>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.FeedbackMensagem))
+    {
+        <div class="alert @(Model.FeedbackTipo == "success" ? "alert-success" : "alert-danger") soft-alert" role="status">
+            @Model.FeedbackMensagem
+        </div>
+    }
+
+    <section class="session-panel">
+        <form method="get" asp-action="Index" class="session-picker">
+            <label for="sessao">Programação do dia</label>
+            <select id="sessao" name="sessao" class="form-select festival-select" onchange="this.form.submit()">
+                @foreach (var sessao in Model.Sessoes)
+                {
+                    <option value="@sessao.Key" selected="@(sessao.Key == Model.SessaoAtual.Key ? "selected" : null)">@sessao.Titulo</option>
+                }
+            </select>
+        </form>
+
+        <div class="session-summary">
+            <div>
+                <span class="summary-label">Sessão ativa - </span>
+                <strong>@Model.SessaoAtual.Titulo</strong>
+            </div>
+            <div>
+                <span class="summary-label">Coreografias</span>
+                <strong>@Model.Apresentacoes.Count</strong>
+            </div>
+        </div>
+    </section>
+
+    @if (!ViewContext.ModelState.IsValid)
+    {
+        <div asp-validation-summary="ModelOnly" class="text-danger validation-summary"></div>
+    }
+
+    @if (Model.Apresentacoes.Count == 0)
+    {
+        <section class="empty-state">
+            <h2>Nenhuma apresentação encontrada</h2>
+            <p>Essa sessão ainda não possui coreografias cadastradas na tabela <code>apresentacoes</code>.</p>
+        </section>
+    }
+    else
+    {
+        <section class="presentation-list">
+            @foreach (var apresentacao in Model.Apresentacoes)
+            {
+                <details class="presentation-card" open="@(apresentacao.JaAvaliado ? null : "open")">
+                    <summary>
+                        <div>
+                            <span class="card-index">Apresentação #@apresentacao.ApresentacaoId</span>
+                            <h2>@apresentacao.CoreografiaNome</h2>
+                            <p>@apresentacao.CoreografoNome</p>
+                        </div>
+
+                        <div class="card-statuses">
+                            <span class="show-pill">@apresentacao.TipoMostra</span>
+                            @if (apresentacao.NotaAtual.HasValue)
+                            {
+                                <span class="score-pill">Sua nota: @apresentacao.NotaAtual.Value.ToString("0.0", new CultureInfo("pt-BR"))</span>
+                            }
+                            else
+                            {
+                                <span class="pending-pill">Pendente</span>
+                            }
+                        </div>
+                    </summary>
+
+                    <div class="presentation-body">
+                        <div class="meta-grid">
+                            <div>
+                                <span class="summary-label">Data</span>
+                                <strong>@apresentacao.Data.ToString("dd/MM/yyyy")</strong>
+                            </div>
+                            <div>
+                                <span class="summary-label">Turno</span>
+                                <strong>@CultureInfo.CurrentCulture.TextInfo.ToTitleCase(apresentacao.Turno.ToLowerInvariant())</strong>
+                            </div>
+                            <div>
+                                <span class="summary-label">Média final</span>
+                                <strong>@(apresentacao.MediaFinal?.ToString("0.00", new CultureInfo("pt-BR")) ?? "Ainda sem média")</strong>
+                            </div>
+                        </div>
+
+                        <form method="post"
+                              asp-action="Salvar"
+                              enctype="multipart/form-data"
+                              class="evaluation-form"
+                              data-audio-form
+                              data-has-existing-parecer="@(string.IsNullOrWhiteSpace(apresentacao.ParecerAtual) ? "false" : "true")">
+                            <input type="hidden" name="ApresentacaoId" value="@apresentacao.ApresentacaoId" />
+                            <input type="hidden" name="SessaoKey" value="@Model.SessaoAtual.Key" />
+                            <input type="file"
+                                   name="AudioArquivo"
+                                   class="d-none"
+                                   accept="audio/webm,audio/wav,audio/mp3,audio/m4a"
+                                   data-audio-file-input />
+
+                            <div class="audio-recorder" data-recorder>
+                                <div class="recorder-topbar">
+                                    <div>
+                                        <span class="summary-label">Áudio do parecer - </span>
+                                        <strong>Gravação máxima de 5 minutos</strong>
+                                    </div>
+                                    <span class="recorder-timer" data-record-timer>00:00</span>
+                                </div>
+
+                                <div class="recorder-actions">
+                                    <button type="button" class="btn btn-dark recorder-button" data-record-start>Gravar áudio</button>
+                                    <button type="button" class="btn btn-outline-dark recorder-button" data-record-stop disabled>Encerrar</button>
+                                </div>
+                                <p class="transcription-status" data-transcription-status>Pronto para gravar.</p>
+                                <audio controls class="audio-preview d-none" data-record-preview></audio>
+                            </div>
+
+                            <div class="field-block">
+                                <label for="nota-@apresentacao.ApresentacaoId">Nota</label>
+                                <input id="nota-@apresentacao.ApresentacaoId"
+                                       name="Nota"
+                                       class="form-control festival-input"
+                                       type="number"
+                                       min="0"
+                                       max="10"
+                                       step="0.1"
+                                       value="@(apresentacao.NotaAtual?.ToString("0.0", CultureInfo.InvariantCulture))" />
+                            </div>
+
+                            <button type="submit" class="btn btn-primary festival-button" data-save-button>Salvar avaliação</button>
+                        </form>
+                    </div>
+                </details>
+            }
+        </section>
+    }
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
