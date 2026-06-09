@@ -158,11 +158,16 @@
                                 <input id="nota-@apresentacao.ApresentacaoId"
                                        name="Nota"
                                        class="form-control festival-input"
-                                       type="number"
-                                       min="0"
-                                       max="10"
-                                       step="0.1"
-                                       value="@(apresentacao.NotaAtual?.ToString("0.0", CultureInfo.InvariantCulture))" />
+                                       type="text"
+                                       inputmode="decimal"
+                                       required
+                                       autocomplete="off"
+                                       spellcheck="false"
+                                       placeholder="Ex.: 8,5"
+                                       pattern="^(10([.,]0+)?|[0-9]([.,][0-9]+)?)$"
+                                       title="Informe uma nota entre 0 e 10, usando virgula ou ponto."
+                                       data-note-input
+                                       value="@(apresentacao.NotaAtual?.ToString("0.0", new CultureInfo("pt-BR")))" />
                             </div>
 
                             <button type="submit" class="btn btn-primary festival-button" data-save-button>Salvar avaliação</button>
@@ -171,7 +176,6 @@
                                 <div class="save-overlay-card" role="status" aria-live="assertive">
                                     <span class="save-spinner" aria-hidden="true"></span>
                                     <strong>Salvando...</strong>
-                                    <p>Enviando nota e áudio. Aguarde a conclusão.</p>
                                 </div>
                             </div>
                         </form>

@@ -61,6 +61,7 @@ public sealed class FestivalDbContext(DbContextOptions<FestivalDbContext> option
             entity.Property(item => item.Nota1).HasColumnName("nota_1").HasColumnType("numeric(5,2)");
             entity.Property(item => item.Nota2).HasColumnName("nota_2").HasColumnType("numeric(5,2)");
             entity.Property(item => item.Nota3).HasColumnName("nota_3").HasColumnType("numeric(5,2)");
+            entity.Property(item => item.Nota4).HasColumnName("nota_4").HasColumnType("numeric(5,2)");
             entity.Property(item => item.MediaFinal)
                 .HasColumnName("media_final")
                 .HasColumnType("numeric(5,2)")
@@ -69,9 +70,11 @@ public sealed class FestivalDbContext(DbContextOptions<FestivalDbContext> option
             entity.Property(item => item.Parecer1).HasColumnName("parecer_1");
             entity.Property(item => item.Parecer2).HasColumnName("parecer_2");
             entity.Property(item => item.Parecer3).HasColumnName("parecer_3");
+            entity.Property(item => item.Parecer4).HasColumnName("parecer_4");
             entity.Property(item => item.AudioParecer1Path).HasColumnName("audio_parecer_1_path");
             entity.Property(item => item.AudioParecer2Path).HasColumnName("audio_parecer_2_path");
             entity.Property(item => item.AudioParecer3Path).HasColumnName("audio_parecer_3_path");
+            entity.Property(item => item.AudioParecer4Path).HasColumnName("audio_parecer_4_path");
             entity.Property(item => item.Turno).HasColumnName("turno").HasMaxLength(20);
             entity.Property(item => item.CriadoEm).HasColumnName("criado_em");
 

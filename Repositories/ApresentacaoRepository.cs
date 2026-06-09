@@ -37,12 +37,16 @@ public sealed class ApresentacaoRepository(FestivalDbContext context) : IApresen
                     ? item.Nota1
                     : juradoNumero == 2
                         ? item.Nota2
-                        : item.Nota3,
+                        : juradoNumero == 3
+                            ? item.Nota3
+                            : item.Nota4,
                 ParecerAtual = juradoNumero == 1
                     ? item.Parecer1
                     : juradoNumero == 2
                         ? item.Parecer2
-                        : item.Parecer3,
+                        : juradoNumero == 3
+                            ? item.Parecer3
+                            : item.Parecer4,
                 MediaFinal = item.MediaFinal
             })
             .ToListAsync(cancellationToken);
@@ -109,8 +113,21 @@ public sealed class ApresentacaoRepository(FestivalDbContext context) : IApresen
                 }
 
                 break;
+            case 4:
+                apresentacao.Nota4 = notaNormalizada;
+                if (parecerNormalizado is not null)
+                {
+                    apresentacao.Parecer4 = parecerNormalizado;
+                }
+
+                if (audioPathNormalizado is not null)
+                {
+                    apresentacao.AudioParecer4Path = audioPathNormalizado;
+                }
+
+                break;
             default:
-                throw new InvalidOperationException("O numero do jurado precisa estar entre 1 e 3.");
+                throw new InvalidOperationException("O numero do jurado precisa estar entre 1 e 4.");
         }
 
         await context.SaveChangesAsync(cancellationToken);
@@ -128,7 +145,9 @@ public sealed class ApresentacaoRepository(FestivalDbContext context) : IApresen
                 ? item.Parecer1
                 : juradoNumero == 2
                     ? item.Parecer2
-                    : item.Parecer3)
+                    : juradoNumero == 3
+                        ? item.Parecer3
+                        : item.Parecer4)
             .FirstOrDefaultAsync(cancellationToken);
 
         return !string.IsNullOrWhiteSpace(parecer);

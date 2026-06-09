@@ -19,8 +19,9 @@
     const waveformCanvas = container.querySelector("[data-voice-waveform]");
     const saveOverlay = form?.querySelector("[data-save-overlay]");
     const saveButton = form?.querySelector("[data-save-button]");
+    const notaInput = form?.querySelector("[data-note-input]");
 
-    if (!form || !fileInput || !playButton || !pauseButton || !stopButton || !timerElement || !badgeElement || !statusElement || !previewElement || !visualizerElement || !waveformCanvas || !saveOverlay || !saveButton) {
+    if (!form || !fileInput || !playButton || !pauseButton || !stopButton || !timerElement || !badgeElement || !statusElement || !previewElement || !visualizerElement || !waveformCanvas || !saveOverlay || !saveButton || !notaInput) {
       return;
     }
 
@@ -33,6 +34,7 @@
     const idleStatusText = hasExistingParecer
       ? "Pressione play para gravar um novo parecer."
       : "Pressione play para iniciar a gravacao.";
+    const notaRegex = /^(10([.,]0+)?|[0-9]([.,][0-9]+)?)$/;
 
     let mediaRecorder = null;
     let mediaStream = null;
@@ -284,7 +286,9 @@
       saveOverlay.hidden = false;
       saveButton.textContent = "Salvando...";
 
-      form.querySelectorAll("button, input, select, textarea").forEach((element) => {
+      // Do not disable posted fields here, otherwise the browser omits them
+      // from the multipart payload, including the antiforgery token.
+      form.querySelectorAll("button").forEach((element) => {
         if (!(element instanceof HTMLElement)) {
           return;
         }
@@ -295,6 +299,23 @@
 
         element.disabled = true;
       });
+    };
+
+    const validateNota = () => {
+      const valorInformado = notaInput.value.trim();
+
+      if (!valorInformado) {
+        notaInput.setCustomValidity("Informe uma nota entre 0 e 10.");
+        return false;
+      }
+
+      if (!notaRegex.test(valorInformado)) {
+        notaInput.setCustomValidity("Informe uma nota decimal entre 0 e 10, usando virgula ou ponto.");
+        return false;
+      }
+
+      notaInput.setCustomValidity("");
+      return true;
     };
 
     const unlockFormIfNeeded = () => {
@@ -553,6 +574,9 @@
       stopRecording();
     });
 
+    notaInput.addEventListener("input", validateNota);
+    notaInput.addEventListener("blur", validateNota);
+
     form.addEventListener("submit", (event) => {
       if (form.dataset.submitting === "true") {
         event.preventDefault();
@@ -570,6 +594,13 @@
         event.preventDefault();
         setRecorderState("idle", "Obrigatorio", "Grave o audio do parecer antes de salvar.");
         unlockFormIfNeeded();
+        return;
+      }
+
+      if (!validateNota()) {
+        event.preventDefault();
+        unlockFormIfNeeded();
+        notaInput.reportValidity();
         return;
       }
 

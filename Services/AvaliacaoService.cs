@@ -1,5 +1,6 @@
 using WebAvaliacaoDancando.Models;
 using WebAvaliacaoDancando.Repositories;
+using WebAvaliacaoDancando.Security;
 using WebAvaliacaoDancando.ViewModels;
 
 namespace WebAvaliacaoDancando.Services;
@@ -64,21 +65,13 @@ public sealed class AvaliacaoService(
                 cancellationToken);
         }
 
-        try
-        {
-            await apresentacaoRepository.SaveAvaliacaoAsync(
-                model.ApresentacaoId,
-                juradoNumero,
-                model.Nota,
-                parecer,
-                audioPath,
-                cancellationToken);
-        }
-        catch (Exception e)
-        {
-
-            throw;
-        }
+        await apresentacaoRepository.SaveAvaliacaoAsync(
+            model.ApresentacaoId,
+            juradoNumero,
+            model.Nota,
+            parecer,
+            audioPath,
+            cancellationToken);
     }
 
     public Task<bool> ApresentacaoJaTemParecerAsync(
@@ -92,9 +85,9 @@ public sealed class AvaliacaoService(
 
     private static void ValidateJuradoNumero(short juradoNumero)
     {
-        if (juradoNumero is < 1 or > 3)
+        if (!JuradoAvaliacaoRules.IsNumeroSuportado(juradoNumero))
         {
-            throw new InvalidOperationException("Nao foi possivel identificar o numero do jurado logado.");
+            throw new InvalidOperationException(JuradoAvaliacaoRules.BuildPerfilNaoHabilitadoMensagem(juradoNumero));
         }
     }
 

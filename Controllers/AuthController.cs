@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WebAvaliacaoDancando.Extensions;
+using WebAvaliacaoDancando.Security;
 using WebAvaliacaoDancando.Services;
 using WebAvaliacaoDancando.ViewModels;
 
@@ -11,11 +13,21 @@ public class AuthController(IAuthService authService) : Controller
 {
     [AllowAnonymous]
     [HttpGet("/Login")]
-    public IActionResult Login()
+    public async Task<IActionResult> Login()
     {
         if (User.Identity?.IsAuthenticated == true)
         {
-            return RedirectToAction("Index", "Avaliacao");
+            var juradoNumero = User.GetJuradoNumero();
+            if (JuradoAvaliacaoRules.IsNumeroSuportado(juradoNumero))
+            {
+                return RedirectToAction("Index", "Avaliacao");
+            }
+
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return View(new LoginViewModel
+            {
+                FeedbackMensagem = JuradoAvaliacaoRules.BuildPerfilNaoHabilitadoMensagem(juradoNumero)
+            });
         }
 
         return View(new LoginViewModel
@@ -37,7 +49,16 @@ public class AuthController(IAuthService authService) : Controller
         var principal = await authService.AuthenticateAsync(model.Login, model.Senha, cancellationToken);
         if (principal is null)
         {
-            ModelState.AddModelError(string.Empty, "Usuário ou senha inválidos.");
+            ModelState.AddModelError(string.Empty, "Usuario ou senha invalidos.");
+            return View(model);
+        }
+
+        var juradoNumero = principal.GetJuradoNumero();
+        if (!JuradoAvaliacaoRules.IsNumeroSuportado(juradoNumero))
+        {
+            ModelState.AddModelError(
+                string.Empty,
+                JuradoAvaliacaoRules.BuildPerfilNaoHabilitadoMensagem(juradoNumero));
             return View(model);
         }
 
@@ -59,7 +80,7 @@ public class AuthController(IAuthService authService) : Controller
     public async Task<IActionResult> Logout()
     {
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-        TempData["FeedbackMensagem"] = "Sessão encerrada com sucesso.";
+        TempData["FeedbackMensagem"] = "Sessao encerrada com sucesso.";
         return RedirectToAction(nameof(Login));
     }
 }

@@ -13,6 +13,9 @@ public sealed class AuthService(IJuradoRepository juradoRepository) : IAuthServi
         string senha,
         CancellationToken cancellationToken = default)
     {
+
+        //string hash = BCrypt.Net.BCrypt.HashPassword(senha);
+
         var jurado = await juradoRepository.GetByLoginAsync(login, cancellationToken);
         if (jurado is null || !SenhaValida(senha, jurado.SenhaHash))
         {
