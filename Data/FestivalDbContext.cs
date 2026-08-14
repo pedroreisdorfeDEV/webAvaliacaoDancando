@@ -9,6 +9,7 @@ public sealed class FestivalDbContext(DbContextOptions<FestivalDbContext> option
     public DbSet<Jurado> Jurados => Set<Jurado>();
     public DbSet<Coreografia> Coreografias => Set<Coreografia>();
     public DbSet<Apresentacao> Apresentacoes => Set<Apresentacao>();
+    public DbSet<DataTurnoPreferencialDisponivel> DatasTurnosPreferenciaisDisponiveis => Set<DataTurnoPreferencialDisponivel>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -54,6 +55,7 @@ public sealed class FestivalDbContext(DbContextOptions<FestivalDbContext> option
             entity.Property(item => item.Id)
                 .HasColumnName("id")
                 .ValueGeneratedOnAdd();
+            entity.Property(item => item.Ordem).HasColumnName("ordem");
             entity.Property(item => item.Data)
                 .HasColumnName("data")
                 .HasColumnType("date");
@@ -82,6 +84,22 @@ public sealed class FestivalDbContext(DbContextOptions<FestivalDbContext> option
                 .WithMany(item => item.Apresentacoes)
                 .HasForeignKey(item => item.CoreografiaId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<DataTurnoPreferencialDisponivel>(entity =>
+        {
+            entity.ToTable("datas_turnos_preferenciais_disponiveis");
+            entity.HasKey(item => item.Id);
+            entity.Property(item => item.Id).HasColumnName("id");
+            entity.Property(item => item.Data)
+                .HasColumnName("data")
+                .HasColumnType("date");
+            entity.Property(item => item.Turno).HasColumnName("turno").HasMaxLength(20);
+            entity.Property(item => item.Ativo).HasColumnName("ativo");
+            entity.Property(item => item.Ordem).HasColumnName("ordem");
+            entity.Property(item => item.Observacao).HasColumnName("observacao");
+            entity.Property(item => item.DataCriacao).HasColumnName("data_criacao");
+            entity.Property(item => item.DataAtualizacao).HasColumnName("data_atualizacao");
         });
     }
 }

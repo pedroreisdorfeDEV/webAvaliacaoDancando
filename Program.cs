@@ -38,7 +38,7 @@ builder.Services.AddScoped<IApresentacaoRepository, ApresentacaoRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAvaliacaoService, AvaliacaoService>();
 builder.Services.AddScoped<IAudioConversionService, FfmpegAudioConversionService>();
-builder.Services.AddSingleton<IFestivalSessionService, FestivalSessionService>();
+builder.Services.AddScoped<IFestivalSessionService, FestivalSessionService>();
 builder.Services.AddHttpClient<IAudioTranscriptionService, WhisperAudioTranscriptionService>((serviceProvider, httpClient) =>
 {
     var options = serviceProvider.GetRequiredService<IOptions<WhisperServerOptions>>().Value;

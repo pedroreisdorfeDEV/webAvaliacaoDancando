@@ -11,6 +11,7 @@
     const playButton = container.querySelector("[data-record-play]");
     const pauseButton = container.querySelector("[data-record-pause]");
     const stopButton = container.querySelector("[data-record-stop]");
+    const previewToggleButton = container.querySelector("[data-record-preview-toggle]");
     const timerElement = container.querySelector("[data-record-timer]");
     const badgeElement = container.querySelector("[data-record-badge]");
     const statusElement = container.querySelector("[data-transcription-status]");
@@ -21,7 +22,7 @@
     const saveButton = form?.querySelector("[data-save-button]");
     const notaInput = form?.querySelector("[data-note-input]");
 
-    if (!form || !fileInput || !playButton || !pauseButton || !stopButton || !timerElement || !badgeElement || !statusElement || !previewElement || !visualizerElement || !waveformCanvas || !saveOverlay || !saveButton || !notaInput) {
+    if (!form || !fileInput || !playButton || !pauseButton || !stopButton || !previewToggleButton || !timerElement || !badgeElement || !statusElement || !previewElement || !visualizerElement || !waveformCanvas || !saveOverlay || !saveButton || !notaInput) {
       return;
     }
 
@@ -53,6 +54,22 @@
     let visualizerFrameId = null;
     let lastWaveformPoints = [];
     const saveButtonLabel = saveButton.textContent;
+    const previewPlayIcon = previewToggleButton.querySelector('[data-preview-icon="play"]');
+    const previewPauseIcon = previewToggleButton.querySelector('[data-preview-icon="pause"]');
+
+    const updatePreviewToggleVisual = () => {
+      const isPlayingPreview = !previewElement.paused && !previewElement.ended;
+      previewToggleButton.setAttribute("aria-label", isPlayingPreview ? "Pausar audio gravado" : "Ouvir audio gravado");
+      previewToggleButton.setAttribute("title", isPlayingPreview ? "Pausar audio gravado" : "Ouvir audio gravado");
+
+      if (previewPlayIcon) {
+        previewPlayIcon.hidden = isPlayingPreview;
+      }
+
+      if (previewPauseIcon) {
+        previewPauseIcon.hidden = !isPlayingPreview;
+      }
+    };
 
     const formatElapsed = (elapsedMs) => {
       const totalSeconds = Math.floor(elapsedMs / 1000);
@@ -246,11 +263,14 @@
       const state = mediaRecorder?.state ?? "inactive";
       const isRecording = state === "recording";
       const isPaused = state === "paused";
+      const hasRecordedPreview = Boolean(previewElement.getAttribute("src"));
 
       playButton.disabled = isRecording;
       pauseButton.disabled = !isRecording;
       stopButton.disabled = !(isRecording || isPaused);
+      previewToggleButton.disabled = isRecording || isPaused || !hasRecordedPreview;
       saveButton.disabled = isRecording || isPaused;
+      updatePreviewToggleVisual();
     };
 
     const setupVisualizer = async () => {
@@ -270,6 +290,9 @@
     };
 
     const clearPreview = () => {
+      previewElement.pause();
+      previewElement.currentTime = 0;
+
       if (objectUrl) {
         URL.revokeObjectURL(objectUrl);
         objectUrl = null;
@@ -277,6 +300,7 @@
 
       previewElement.removeAttribute("src");
       previewElement.classList.add("d-none");
+      updatePreviewToggleVisual();
     };
 
     const lockFormForSubmit = () => {
@@ -462,6 +486,7 @@
             setRecordedFile(audioBlob);
             objectUrl = URL.createObjectURL(audioBlob);
             previewElement.src = objectUrl;
+            previewElement.currentTime = 0;
             previewElement.classList.remove("d-none");
           }
 
@@ -572,6 +597,34 @@
 
     stopButton.addEventListener("click", () => {
       stopRecording();
+    });
+
+    previewToggleButton.addEventListener("click", async () => {
+      if (previewToggleButton.disabled || !previewElement.getAttribute("src")) {
+        return;
+      }
+
+      if (!previewElement.paused && !previewElement.ended) {
+        previewElement.pause();
+        previewElement.currentTime = Math.max(0, previewElement.currentTime);
+        updatePreviewToggleVisual();
+        return;
+      }
+
+      try {
+        await previewElement.play();
+      } catch {
+        // ignore autoplay and device-related playback errors
+      }
+
+      updatePreviewToggleVisual();
+    });
+
+    previewElement.addEventListener("play", updatePreviewToggleVisual);
+    previewElement.addEventListener("pause", updatePreviewToggleVisual);
+    previewElement.addEventListener("ended", () => {
+      previewElement.currentTime = 0;
+      updatePreviewToggleVisual();
     });
 
     notaInput.addEventListener("input", validateNota);

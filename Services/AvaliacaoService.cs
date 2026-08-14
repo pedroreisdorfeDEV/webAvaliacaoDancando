@@ -20,14 +20,15 @@ public sealed class AvaliacaoService(
     {
         ValidateJuradoNumero(juradoNumero);
 
-        var sessaoAtual = festivalSessionService.GetByKeyOrDefault(sessaoKey);
+        var sessoes = await festivalSessionService.GetAllAsync(cancellationToken);
+        var sessaoAtual = festivalSessionService.GetByKeyOrDefault(sessoes, sessaoKey);
         var apresentacoes = await apresentacaoRepository.GetBySessaoAsync(sessaoAtual, juradoNumero, cancellationToken);
 
         return new AvaliacaoViewModel
         {
             JuradoNome = juradoNome,
             JuradoNumero = juradoNumero,
-            Sessoes = festivalSessionService.GetAll(),
+            Sessoes = sessoes,
             SessaoAtual = sessaoAtual,
             Apresentacoes = apresentacoes
         };

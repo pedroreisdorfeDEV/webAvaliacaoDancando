@@ -540,6 +540,10 @@ strong,
   background: linear-gradient(135deg, #d64545, #ef5f5f);
 }
 
+.media-control-preview {
+  background: linear-gradient(135deg, #1945c7, #4d7cff);
+}
+
 .recorder-timer {
   display: inline-flex;
   align-items: center;

@@ -3,6 +3,7 @@ namespace WebAvaliacaoDancando.Models;
 public sealed class Apresentacao
 {
     public long Id { get; set; }
+    public int Ordem { get; set; }
     public DateTime Data { get; set; }
     public long CoreografiaId { get; set; }
     public decimal? Nota1 { get; set; }

@@ -12,6 +12,7 @@ public sealed class ApresentacaoCardViewModel
     public decimal? NotaAtual { get; init; }
     public string? ParecerAtual { get; init; }
     public decimal? MediaFinal { get; init; }
+    public int Ordem { get; init; }
 
     public bool JaAvaliado => NotaAtual.HasValue || !string.IsNullOrWhiteSpace(ParecerAtual);
 }

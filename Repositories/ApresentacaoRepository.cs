@@ -19,13 +19,15 @@ public sealed class ApresentacaoRepository(FestivalDbContext context) : IApresen
             .Where(item =>
                 item.Data == sessao.Data &&
                 (item.Turno ?? "NOITE").ToUpper() == turnoNormalizado)
-            .OrderBy(item => item.Id)
+            .OrderBy(item => item.Ordem)
+            .ThenBy(item => item.Id)
             .Select(item => new ApresentacaoCardViewModel
             {
                 ApresentacaoId = item.Id,
                 CoreografiaId = item.CoreografiaId,
                 Data = item.Data,
                 Turno = (item.Turno ?? "NOITE").ToUpper(),
+                Ordem = item.Ordem,
                 CoreografiaNome = item.Coreografia != null ? item.Coreografia.Nome : string.Empty,
                 CoreografoNome = item.Coreografia != null && item.Coreografia.NomeCoreografo != string.Empty
                     ? item.Coreografia.NomeCoreografo

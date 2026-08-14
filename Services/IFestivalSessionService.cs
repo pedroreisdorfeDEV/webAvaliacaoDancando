@@ -4,6 +4,6 @@ namespace WebAvaliacaoDancando.Services;
 
 public interface IFestivalSessionService
 {
-    IReadOnlyList<FestivalSessao> GetAll();
-    FestivalSessao GetByKeyOrDefault(string? key);
+    Task<IReadOnlyList<FestivalSessao>> GetAllAsync(CancellationToken cancellationToken = default);
+    FestivalSessao GetByKeyOrDefault(IReadOnlyList<FestivalSessao> sessoes, string? key);
 }

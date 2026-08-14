@@ -37,7 +37,7 @@
                 <strong>@Model.SessaoAtual.Titulo</strong>
             </div>
             <div>
-                <span class="summary-label">Coreografias</span>
+                <span class="summary-label">Coreografias: </span>
                 <strong>@Model.Apresentacoes.Count</strong>
             </div>
         </div>
@@ -60,10 +60,10 @@
         <section class="presentation-list">
             @foreach (var apresentacao in Model.Apresentacoes)
             {
-                <details class="presentation-card" open="@(apresentacao.JaAvaliado ? null : "open")">
+                <details class="presentation-card">
                     <summary>
                         <div>
-                            <span class="card-index">Apresentação #@apresentacao.ApresentacaoId</span>
+                            <span class="card-index">Apresentação #@apresentacao.Ordem</span>
                             <h2>@apresentacao.CoreografiaNome</h2>
                             <p>@apresentacao.CoreografoNome</p>
                         </div>
@@ -147,9 +147,17 @@
                                             <path d="M7 7h10v10H7z"></path>
                                         </svg>
                                     </button>
+                                    <button type="button" class="media-control media-control-preview" data-record-preview-toggle aria-label="Ouvir audio gravado" title="Ouvir audio gravado" disabled>
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" data-preview-icon="play">
+                                            <path d="M8 6.5v11l9-5.5-9-5.5Z"></path>
+                                        </svg>
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" data-preview-icon="pause" hidden>
+                                            <path d="M7 5h4v14H7zM13 5h4v14h-4z"></path>
+                                        </svg>
+                                    </button>
                                 </div>
                                 <p class="recorder-helper">* Clique em play para iniciar. Caso queira somente pausar, pode apertar em play para retormar de onde parou. 
-                                    Se optar pelo 'stop', ao retormar a gravação iniciará um novo áudio.</p>
+                                    Se optar pelo 'stop', ao retormar a gravação iniciará um novo áudio. Ao encerrar o áudio pode escutá-lo clicando no botão azul.</p>
                                 <audio controls class="audio-preview d-none" data-record-preview></audio>
                             </div>
 
